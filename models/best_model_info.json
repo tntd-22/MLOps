@@ -1,0 +1,19 @@
+{
+  "run_id": "922e43cb4ed54b33ad49754c68ce6c1b",
+  "experiment_name": "exp1_baseline_cnn",
+  "model_type": "cnn",
+  "final_train_accuracy": 0.9727666666666667,
+  "final_val_accuracy": 0.9206,
+  "final_train_loss": 0.07395064283485214,
+  "final_val_loss": 0.2726818077802658,
+  "best_val_accuracy": 0.9208,
+  "overfit_gap": 0.052166666666666694,
+  "hyperparameters": {
+    "learning_rate": 0.001,
+    "batch_size": 64,
+    "epochs": 10,
+    "dropout_rate": 0.0,
+    "use_batchnorm": false,
+    "use_augmentation": false
+  }
+}

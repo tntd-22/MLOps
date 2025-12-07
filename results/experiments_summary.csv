@@ -1,0 +1,6 @@
+Experiment,Model Type,Train Accuracy,Val Accuracy,Best Val Accuracy,Overfit Gap,Learning Rate,Batch Size,Epochs,Dropout,BatchNorm,Augmentation,Run ID
+exp1_baseline_cnn,cnn,0.9727666666666667,0.9206,0.9208,0.052166666666666694,0.001,64,10,0.0,False,False,922e43cb4ed54b33ad49754c68ce6c1b
+exp2_cnn_regularization,cnn,0.93225,0.9171,0.9193,0.015149999999999997,0.001,64,10,0.5,True,False,d0b5dca869f74ecdaaa2e8a219eb6b64
+exp3_cnn_augmentation,cnn,0.8519,0.8893,0.8893,-0.03739999999999999,0.001,64,10,0.5,True,True,357287c7cbbf4777b318d8f9803d9804
+exp4_hyperparameter_tuning,cnn,0.8691833333333333,0.8915,0.9017,-0.02231666666666665,0.001,64,15,0.5,True,True,f2dcdf9034d349b98b41615a72ccea1a
+exp5_mlp_comparison,mlp,0.9164166666666667,0.8811,0.8859,0.03531666666666666,0.001,64,10,0.0,False,False,dcbcbab463de42b5856bf94404a64732
