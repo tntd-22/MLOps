@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fashion MNIST Classifier - MLOps Project</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Fashion MNIST Classifier</h1>
+            <p class="subtitle">MLOps Project - CNN Image Classification</p>
+        </header>
+
+        <main>
+            <section class="upload-section">
+                <h2>Upload an Image</h2>
+                <p>Upload a 28x28 grayscale image of clothing/fashion item</p>
+
+                <form id="upload-form" enctype="multipart/form-data">
+                    <div class="file-input-wrapper">
+                        <input type="file" id="file-input" name="file" accept="image/*">
+                        <label for="file-input" class="file-label">
+                            <span id="file-name">Choose an image...</span>
+                        </label>
+                    </div>
+                    <button type="submit" id="predict-btn">Predict</button>
+                </form>
+
+                <div id="preview-container" style="display: none;">
+                    <h3>Image Preview</h3>
+                    <img id="image-preview" alt="Preview">
+                </div>
+            </section>
+
+            <section id="result-section" style="display: none;">
+                <h2>Prediction Result</h2>
+                <div class="result-card">
+                    <div class="prediction">
+                        <span class="label">Predicted Class:</span>
+                        <span id="predicted-class" class="value"></span>
+                    </div>
+                    <div class="confidence">
+                        <span class="label">Confidence:</span>
+                        <span id="confidence" class="value"></span>
+                    </div>
+                </div>
+
+                <div class="probabilities">
+                    <h3>Top Predictions</h3>
+                    <ul id="prob-list"></ul>
+                </div>
+            </section>
+
+            <section class="model-info">
+                <h2>Model Information</h2>
+                <div class="info-grid">
+                    {% if model_info %}
+                        {% if model_info.experiment_name %}
+                            <div class="info-item">
+                                <span class="info-label">Experiment:</span>
+                                <span class="info-value">{{ model_info.experiment_name }}</span>
+                            </div>
+                        {% endif %}
+                        {% if model_info.model_type %}
+                            <div class="info-item">
+                                <span class="info-label">Model Type:</span>
+                                <span class="info-value">{{ model_info.model_type | upper }}</span>
+                            </div>
+                        {% endif %}
+                        {% if model_info.best_val_accuracy %}
+                            <div class="info-item">
+                                <span class="info-label">Validation Accuracy:</span>
+                                <span class="info-value">{{ "%.2f" | format(model_info.best_val_accuracy * 100) }}%</span>
+                            </div>
+                        {% endif %}
+                        {% if model_info.overfit_gap is defined %}
+                            <div class="info-item">
+                                <span class="info-label">Overfit Gap:</span>
+                                <span class="info-value">{{ "%.2f" | format(model_info.overfit_gap * 100) }}%</span>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <p>Model information not available. Please train the model first.</p>
+                    {% endif %}
+                </div>
+            </section>
+
+            <section class="classes-section">
+                <h2>Fashion MNIST Classes</h2>
+                <div class="classes-grid">
+                    <span class="class-tag">T-shirt/top</span>
+                    <span class="class-tag">Trouser</span>
+                    <span class="class-tag">Pullover</span>
+                    <span class="class-tag">Dress</span>
+                    <span class="class-tag">Coat</span>
+                    <span class="class-tag">Sandal</span>
+                    <span class="class-tag">Shirt</span>
+                    <span class="class-tag">Sneaker</span>
+                    <span class="class-tag">Bag</span>
+                    <span class="class-tag">Ankle boot</span>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>MLOps Project - Fashion MNIST Classification with PyTorch, MLflow & Flask</p>
+        </footer>
+    </div>
+
+    <script>
+        // File input handling
+        const fileInput = document.getElementById('file-input');
+        const fileName = document.getElementById('file-name');
+        const previewContainer = document.getElementById('preview-container');
+        const imagePreview = document.getElementById('image-preview');
+
+        fileInput.addEventListener('change', function(e) {
+            if (this.files && this.files[0]) {
+                fileName.textContent = this.files[0].name;
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    imagePreview.src = e.target.result;
+                    previewContainer.style.display = 'block';
+                };
+                reader.readAsDataURL(this.files[0]);
+            }
+        });
+
+        // Form submission
+        const form = document.getElementById('upload-form');
+        const resultSection = document.getElementById('result-section');
+        const predictedClass = document.getElementById('predicted-class');
+        const confidence = document.getElementById('confidence');
+        const probList = document.getElementById('prob-list');
+
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    predictedClass.textContent = data.prediction;
+                    confidence.textContent = data.confidence;
+
+                    probList.innerHTML = '';
+                    data.all_probabilities.forEach(([cls, prob]) => {
+                        const li = document.createElement('li');
+                        const percentage = (prob * 100).toFixed(2);
+                        li.innerHTML = `<span class="prob-class">${cls}</span>
+                                       <span class="prob-bar" style="width: ${percentage}%"></span>
+                                       <span class="prob-value">${percentage}%</span>`;
+                        probList.appendChild(li);
+                    });
+
+                    resultSection.style.display = 'block';
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        });
+    </script>
+</body>
+</html>

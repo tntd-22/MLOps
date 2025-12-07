@@ -1,0 +1,41 @@
+# ===== Virtual Environment =====
+venv/
+.venv/
+env/
+
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+*.egg-info/
+
+# ===== Data (auto-download by torchvision) =====
+data/
+
+# ===== MLflow local runs (use DagsHub instead) =====
+mlruns/
+
+# ===== IDE =====
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
+
+# ===== Environment variables (actual values) =====
+.env
+
+# ===== Docker =====
+*.tar
+
+# ===== Jupyter =====
+.ipynb_checkpoints/
+
+# ===== DO NOT IGNORE (committed to git) =====
+# models/              ← Best model weights
+# results/             ← Experiment summaries
+# .env.example         ← Template for env vars
