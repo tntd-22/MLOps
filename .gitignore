@@ -13,8 +13,9 @@ __pycache__/
 # ===== Data (auto-download by torchvision) =====
 data/
 
-# ===== MLflow local runs (use DagsHub instead) =====
-mlruns/
+# ===== MLflow (tracked for Docker builds) =====
+# mlruns/              ← Keep: model artifacts for Docker
+# mlflow.db            ← Keep: experiment database for Docker
 
 # ===== IDE =====
 .vscode/
@@ -35,7 +36,7 @@ Thumbs.db
 # ===== Jupyter =====
 .ipynb_checkpoints/
 
-# ===== DO NOT IGNORE (committed to git) =====
-# models/              ← Best model weights
-# results/             ← Experiment summaries
-# .env.example         ← Template for env vars
+# ===== Legacy folders (no longer used) =====
+models/
+results/
+notebooks/

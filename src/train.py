@@ -1,15 +1,14 @@
 """Training loop with MLflow tracking."""
 
-import os
-import json
+import copy
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import mlflow
+import mlflow.pytorch
 
 from src.model import get_model, count_parameters
 from src.data import get_dataloaders
-from src.config import MODEL_DIR, BEST_MODEL_PATH, MODEL_INFO_PATH
 
 
 def train_epoch(model, train_loader, criterion, optimizer, device):
@@ -133,6 +132,7 @@ def train_model(
 
         # Training loop
         best_val_acc = 0.0
+        best_model_state = None
         history = {
             "train_loss": [],
             "train_acc": [],
@@ -161,12 +161,10 @@ def train_model(
             mlflow.log_metric("val_loss", val_loss, step=epoch)
             mlflow.log_metric("val_accuracy", val_acc, step=epoch)
 
-            # Track best model
+            # Track best model in memory
             if val_acc > best_val_acc:
                 best_val_acc = val_acc
-                if save_model:
-                    os.makedirs(MODEL_DIR, exist_ok=True)
-                    torch.save(model.state_dict(), BEST_MODEL_PATH)
+                best_model_state = copy.deepcopy(model.state_dict())
 
             # Print progress
             print(f"Epoch {epoch+1}/{epochs} - "
@@ -186,6 +184,11 @@ def train_model(
         mlflow.log_metric("final_val_loss", final_val_loss)
         mlflow.log_metric("overfit_gap", overfit_gap)
         mlflow.log_metric("best_val_accuracy", best_val_acc)
+
+        # Log best model to MLflow
+        if save_model and best_model_state is not None:
+            model.load_state_dict(best_model_state)
+            mlflow.pytorch.log_model(model, "model")
 
         # Get run ID
         run_id = mlflow.active_run().info.run_id
@@ -220,11 +223,3 @@ def train_model(
         print(f"{'='*50}\n")
 
         return results, model
-
-
-def save_model_info(results: dict):
-    """Save model info to JSON file."""
-    os.makedirs(MODEL_DIR, exist_ok=True)
-    with open(MODEL_INFO_PATH, "w") as f:
-        json.dump(results, f, indent=2)
-    print(f"Model info saved to {MODEL_INFO_PATH}")

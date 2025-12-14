@@ -1,10 +1,10 @@
 """Data loading and augmentation for Fashion MNIST."""
 
 import torch
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Subset
 from torchvision import datasets, transforms
 
-from src.config import DATA_DIR
+from src.config import DATA_DIR, DEFAULT_SUBSET_SIZE
 
 
 def get_transforms(use_augmentation: bool = False):
@@ -40,7 +40,7 @@ def get_transforms(use_augmentation: bool = False):
 
 
 def get_dataloaders(batch_size: int = 64, use_augmentation: bool = False,
-                    num_workers: int = 0):
+                    num_workers: int = 0, subset_size: int = DEFAULT_SUBSET_SIZE):
     """
     Create data loaders for Fashion MNIST.
 
@@ -48,6 +48,7 @@ def get_dataloaders(batch_size: int = 64, use_augmentation: bool = False,
         batch_size: Batch size for training and validation
         use_augmentation: Whether to apply data augmentation
         num_workers: Number of worker processes for data loading
+        subset_size: Number of training samples to use (None or 0 for full dataset)
 
     Returns:
         Tuple of (train_loader, val_loader)
@@ -69,6 +70,14 @@ def get_dataloaders(batch_size: int = 64, use_augmentation: bool = False,
         download=True,
         transform=val_transform
     )
+
+    # Use subset for faster local training
+    if subset_size and subset_size > 0:
+        train_indices = list(range(min(subset_size, len(train_dataset))))
+        val_indices = list(range(min(subset_size // 6, len(val_dataset))))  # ~1/6 ratio
+        train_dataset = Subset(train_dataset, train_indices)
+        val_dataset = Subset(val_dataset, val_indices)
+        print(f"Using subset: {len(train_indices)} train, {len(val_indices)} val samples")
 
     # Create data loaders
     train_loader = DataLoader(

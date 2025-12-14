@@ -1,23 +1,16 @@
 # MLOps Project - Fashion MNIST Classification
 
-End-to-end MLOps pipeline with PyTorch, MLflow, Flask, and Docker.
+End-to-end MLOps pipeline with PyTorch, MLflow (local with Model Registry), Flask, and Docker.
 
 ## Architecture
 
 ```
-Training (Colab + DagsHub) → Model Export → GitHub → CI/CD → Docker Hub → Inference
+Local Training → MLflow Tracking (SQLite) → Model Registry (Production) → Docker Build → Inference
 ```
 
 ## Quick Start
 
-### 1. Training (Google Colab)
-
-1. Open `notebooks/train_colab.ipynb` in Google Colab
-2. Set your DagsHub credentials
-3. Run all cells to train 5 experiments
-4. Download `best_model.pt` and `best_model_info.json`
-
-### 2. Local Setup
+### 1. Setup
 
 ```bash
 # Clone repository
@@ -33,17 +26,41 @@ source venv/bin/activate  # Linux/Mac
 pip install -r requirements.txt
 ```
 
-### 3. Run Flask App Locally
+### 2. Train Models
+
+```bash
+# Run all 5 experiments (trains models and promotes best to Production)
+python -m src.experiments
+```
+
+This will:
+- Train 5 different model configurations
+- Log all experiments to MLflow (SQLite)
+- Automatically register the best model to Model Registry
+- Promote it to "Production" stage
+
+### 3. View MLflow UI
+
+```bash
+mlflow ui --backend-store-uri sqlite:///mlflow.db
+# Open http://localhost:5000
+```
+
+Browse experiments in the "Experiments" tab and model versions in the "Models" tab.
+
+### 4. Run Flask App
 
 ```bash
 python app.py
 # Open http://localhost:5000
 ```
 
-### 4. Docker
+The app automatically loads the Production model from the Model Registry.
+
+### 5. Docker
 
 ```bash
-# Build
+# Build (includes MLflow artifacts with Production model)
 docker build -t mlops:latest .
 
 # Run
@@ -61,36 +78,55 @@ docker run -p 5000:5000 <username>/mlops:latest
 | 1 | Baseline CNN | No regularization - observe overfitting |
 | 2 | CNN + Regularization | BatchNorm + Dropout - reduce overfitting |
 | 3 | CNN + Augmentation | Data enrichment - best generalization |
-| 4 | Hyperparameter Tuning | Optimized settings |
+| 4 | Hyperparameter Tuning | Optimized settings (15 epochs) |
 | 5 | Simple MLP | Demonstrate underfitting |
+
+## Model Registry
+
+Models are versioned and staged in MLflow Model Registry:
+
+| Stage | Description |
+|-------|-------------|
+| None | Newly registered models |
+| Production | Best performing model (auto-promoted) |
+| Archived | Previous production models |
+
+```python
+# Load Production model programmatically
+import mlflow.pytorch
+model = mlflow.pytorch.load_model("models:/fashion-mnist-cnn/Production")
+```
 
 ## Project Structure
 
 ```
 MLOps/
 ├── .github/workflows/ci-cd.yml  # GitHub Actions
-├── models/                       # Trained model (committed)
-├── notebooks/train_colab.ipynb   # Training notebook
-├── results/                      # Experiment results
 ├── src/                          # Source code
+│   ├── config.py                 # MLflow & Model Registry config
+│   ├── data.py                   # Data loading & augmentation
+│   ├── model.py                  # CNN & MLP architectures
+│   ├── train.py                  # Training loop with MLflow
+│   └── experiments.py            # Run experiments & promote model
 ├── templates/                    # Flask templates
 ├── static/                       # CSS styles
 ├── app.py                        # Flask application
-├── Dockerfile                    # Docker configuration
-└── requirements.txt              # Python dependencies
+├── Dockerfile                    # Docker configuration (Python 3.12)
+├── requirements.txt              # Python dependencies
+├── mlflow.db                     # MLflow SQLite database
+└── mlruns/                       # MLflow artifacts (models)
 ```
-
-## Links
-
-- **DagsHub MLflow**: `https://dagshub.com/<username>/MLOps`
-- **Docker Hub**: `https://hub.docker.com/r/<username>/mlops`
 
 ## CI/CD
 
 Push to `main` branch triggers:
-1. Build Docker image
+1. Build Docker image (includes MLflow artifacts)
 2. Push to Docker Hub
 
 Required GitHub Secrets:
 - `DOCKER_USERNAME`
 - `DOCKER_TOKEN`
+
+## Links
+
+- **Docker Hub**: `https://hub.docker.com/r/<username>/mlops`

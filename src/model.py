@@ -1,6 +1,5 @@
 """Neural network architectures for Fashion MNIST classification."""
 
-import torch
 import torch.nn as nn
 
 

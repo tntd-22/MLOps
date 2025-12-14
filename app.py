@@ -1,15 +1,17 @@
 """Flask web application for Fashion MNIST prediction."""
 
-import os
-import json
 import torch
+import mlflow.pytorch
 from flask import Flask, render_template, request, jsonify
 from PIL import Image
 import io
 
-from src.model import CNN
 from src.data import get_inference_transform
-from src.config import BEST_MODEL_PATH, MODEL_INFO_PATH, FASHION_MNIST_CLASSES
+from src.config import (
+    FASHION_MNIST_CLASSES,
+    get_production_model_from_registry,
+    setup_mlflow
+)
 
 app = Flask(__name__)
 
@@ -19,30 +21,28 @@ model_info = None
 
 
 def load_model():
-    """Load the trained model from disk."""
+    """Load the Production model from MLflow Model Registry."""
     global model, model_info
 
-    # Load model architecture (with BatchNorm and Dropout as used in best experiments)
-    model = CNN(use_batchnorm=True, dropout_rate=0.5)
+    # Setup MLflow
+    setup_mlflow()
 
-    # Load trained weights
-    if os.path.exists(BEST_MODEL_PATH):
-        model.load_state_dict(torch.load(BEST_MODEL_PATH, map_location="cpu"))
+    # Load Production model from registry
+    model_uri, registry_info = get_production_model_from_registry()
+
+    if model_uri:
+        model = mlflow.pytorch.load_model(model_uri)
         model.eval()
-        print(f"Model loaded from {BEST_MODEL_PATH}")
-    else:
-        print(f"Warning: Model file not found at {BEST_MODEL_PATH}")
-        print("Please train the model first using Google Colab")
+        model_info = registry_info
+        print(f"Model loaded from registry: {registry_info['model_name']}")
+        print(f"Version: {registry_info['version']} (@{registry_info['alias']})")
+        print(f"Experiment: {registry_info['experiment_name']}")
+        print(f"Best validation accuracy: {registry_info['best_val_accuracy']:.4f}")
+        return model
 
-    # Load model info
-    if os.path.exists(MODEL_INFO_PATH):
-        with open(MODEL_INFO_PATH, "r") as f:
-            model_info = json.load(f)
-        print(f"Model info loaded from {MODEL_INFO_PATH}")
-    else:
-        model_info = {"message": "Model info not available"}
-
-    return model
+    raise RuntimeError(
+        "No champion model found. Please run experiments first: python -m src.experiments"
+    )
 
 
 def predict_image(image_bytes):
@@ -137,5 +137,5 @@ if __name__ == "__main__":
     # Load model on startup
     load_model()
 
-    # Run Flask app
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    # Run Flask app (port 5001 to avoid macOS AirPlay conflict)
+    app.run(host="0.0.0.0", port=5001, debug=False)

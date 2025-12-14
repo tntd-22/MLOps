@@ -1,8 +1,15 @@
 """Run all 5 experiments for MLOps project."""
 
 import mlflow
-from src.config import setup_mlflow, DAGSHUB_REPO_NAME
-from src.train import train_model, save_model_info
+from src.config import (
+    setup_mlflow,
+    MLFLOW_EXPERIMENT_NAME,
+    promote_model_to_production,
+    DEFAULT_EPOCHS,
+    DEFAULT_BATCH_SIZE,
+    DEFAULT_LEARNING_RATE
+)
+from src.train import train_model
 
 
 def run_all_experiments():
@@ -16,9 +23,9 @@ def run_all_experiments():
     4. Hyperparameter Tuning
     5. Simple MLP Comparison
     """
-    # Setup MLflow
+    # Setup MLflow with local SQLite backend
     mlflow_client = setup_mlflow()
-    mlflow.set_experiment(DAGSHUB_REPO_NAME)
+    mlflow.set_experiment(MLFLOW_EXPERIMENT_NAME)
 
     all_results = []
     best_result = None
@@ -37,9 +44,9 @@ def run_all_experiments():
         use_batchnorm=False,
         dropout_rate=0.0,
         use_augmentation=False,
-        learning_rate=0.001,
-        batch_size=64,
-        epochs=10,
+        learning_rate=DEFAULT_LEARNING_RATE,
+        batch_size=DEFAULT_BATCH_SIZE,
+        epochs=DEFAULT_EPOCHS,
         description="Baseline CNN without regularization - observe overfitting",
         save_model=True
     )
@@ -61,9 +68,9 @@ def run_all_experiments():
         use_batchnorm=True,
         dropout_rate=0.5,
         use_augmentation=False,
-        learning_rate=0.001,
-        batch_size=64,
-        epochs=10,
+        learning_rate=DEFAULT_LEARNING_RATE,
+        batch_size=DEFAULT_BATCH_SIZE,
+        epochs=DEFAULT_EPOCHS,
         description="CNN with BatchNorm and Dropout(0.5) - reduce overfitting",
         save_model=True
     )
@@ -85,9 +92,9 @@ def run_all_experiments():
         use_batchnorm=True,
         dropout_rate=0.5,
         use_augmentation=True,
-        learning_rate=0.001,
-        batch_size=64,
-        epochs=10,
+        learning_rate=DEFAULT_LEARNING_RATE,
+        batch_size=DEFAULT_BATCH_SIZE,
+        epochs=DEFAULT_EPOCHS,
         description="CNN with regularization and data augmentation - best generalization",
         save_model=True
     )
@@ -103,17 +110,17 @@ def run_all_experiments():
     print("EXPERIMENT 4: Hyperparameter Tuning")
     print("="*60)
 
-    # Try different learning rates and epochs
+    # Try different learning rate
     results4, _ = train_model(
         experiment_name="exp4_hyperparameter_tuning",
         model_type="cnn",
         use_batchnorm=True,
-        dropout_rate=0.5,
+        dropout_rate=0.3,
         use_augmentation=True,
-        learning_rate=0.001,  # Can experiment with 0.01, 0.0001
-        batch_size=64,        # Can experiment with 32, 128
-        epochs=15,            # Increased epochs
-        description="Hyperparameter tuning - optimized settings",
+        learning_rate=0.0005,
+        batch_size=DEFAULT_BATCH_SIZE,
+        epochs=DEFAULT_EPOCHS,
+        description="Hyperparameter tuning - lower dropout and learning rate",
         save_model=True
     )
     all_results.append(results4)
@@ -134,9 +141,9 @@ def run_all_experiments():
         use_batchnorm=False,
         dropout_rate=0.0,
         use_augmentation=False,
-        learning_rate=0.001,
-        batch_size=64,
-        epochs=10,
+        learning_rate=DEFAULT_LEARNING_RATE,
+        batch_size=DEFAULT_BATCH_SIZE,
+        epochs=DEFAULT_EPOCHS,
         description="Simple MLP - demonstrates underfitting on image data",
         save_model=False  # Don't save MLP as best model
     )
@@ -162,9 +169,13 @@ def run_all_experiments():
     print("-"*60)
     print(f"\nBest Model: {best_result['experiment_name']}")
     print(f"Best Validation Accuracy: {best_val_acc:.4f}")
+    print(f"Run ID: {best_result['run_id']}")
 
-    # Save best model info
-    save_model_info(best_result)
+    # Register and promote best model to Production
+    print("\n" + "="*60)
+    print("REGISTERING BEST MODEL TO PRODUCTION")
+    print("="*60)
+    promote_model_to_production(best_result['run_id'])
 
     return all_results, best_result
 
