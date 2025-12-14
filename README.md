@@ -14,7 +14,7 @@ Local Training → MLflow Tracking (SQLite) → Model Registry (Production) → 
 
 ```bash
 # Clone repository
-git clone https://github.com/<username>/MLOps.git
+git clone https://github.com/tntd-22/MLOps.git
 cd MLOps
 
 # Create virtual environment
@@ -67,8 +67,8 @@ docker build -t mlops:latest .
 docker run -p 5000:5000 mlops:latest
 
 # Or pull from Docker Hub
-docker pull <username>/mlops:latest
-docker run -p 5000:5000 <username>/mlops:latest
+docker pull dungtnt/mlops:latest
+docker run -p 5000:5000 dungtnt/mlops:latest
 ```
 
 ## Experiments
@@ -129,4 +129,5 @@ Required GitHub Secrets:
 
 ## Links
 
-- **Docker Hub**: `https://hub.docker.com/r/<username>/mlops`
+- **GitHub**: https://github.com/tntd-22/MLOps
+- **Docker Hub**: https://hub.docker.com/r/dungtnt/mlops

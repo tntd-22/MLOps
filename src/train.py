@@ -188,7 +188,7 @@ def train_model(
         # Log best model to MLflow
         if save_model and best_model_state is not None:
             model.load_state_dict(best_model_state)
-            mlflow.pytorch.log_model(model, "model")
+            mlflow.pytorch.log_model(model, name="model")
 
         # Get run ID
         run_id = mlflow.active_run().info.run_id
