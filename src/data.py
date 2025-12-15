@@ -1,10 +1,37 @@
 """Data loading and augmentation for Fashion MNIST."""
 
+import numpy as np
 import torch
 from torch.utils.data import DataLoader, Subset
 from torchvision import datasets, transforms
 
 from src.config import DATA_DIR, DEFAULT_SUBSET_SIZE
+
+
+def _get_stratified_indices(dataset, n_samples: int) -> list:
+    """
+    Get stratified sample indices ensuring balanced class distribution.
+
+    Args:
+        dataset: PyTorch dataset with targets attribute
+        n_samples: Total number of samples to select
+
+    Returns:
+        List of indices with balanced class distribution
+    """
+    targets = np.array(dataset.targets)
+    classes = np.unique(targets)
+    n_classes = len(classes)
+    samples_per_class = n_samples // n_classes
+
+    indices = []
+    for cls in classes:
+        cls_indices = np.where(targets == cls)[0]
+        selected = np.random.choice(cls_indices, size=min(samples_per_class, len(cls_indices)), replace=False)
+        indices.extend(selected.tolist())
+
+    np.random.shuffle(indices)
+    return indices
 
 
 def get_transforms(use_augmentation: bool = False):
@@ -71,13 +98,14 @@ def get_dataloaders(batch_size: int = 64, use_augmentation: bool = False,
         transform=val_transform
     )
 
-    # Use subset for faster local training
+    # Use subset for faster local training (stratified sampling for balanced classes)
     if subset_size and subset_size > 0:
-        train_indices = list(range(min(subset_size, len(train_dataset))))
-        val_indices = list(range(min(subset_size // 6, len(val_dataset))))  # ~1/6 ratio
+        train_indices = _get_stratified_indices(train_dataset, subset_size)
+        val_size = subset_size // 5  # ~1/5 ratio (5000 train → 1000 val)
+        val_indices = _get_stratified_indices(val_dataset, val_size)
         train_dataset = Subset(train_dataset, train_indices)
         val_dataset = Subset(val_dataset, val_indices)
-        print(f"Using subset: {len(train_indices)} train, {len(val_indices)} val samples")
+        print(f"Using subset: {len(train_indices)} train, {len(val_indices)} val samples (stratified)")
 
     # Create data loaders
     train_loader = DataLoader(

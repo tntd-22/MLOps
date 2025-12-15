@@ -63,7 +63,8 @@ def validate(model, val_loader, criterion, device):
 
 def train_model(
     experiment_name: str,
-    model_type: str = "cnn",
+    channels: list = None,
+    kernel_size: int = 3,
     use_batchnorm: bool = False,
     dropout_rate: float = 0.0,
     use_augmentation: bool = False,
@@ -78,7 +79,8 @@ def train_model(
 
     Args:
         experiment_name: Name for this experiment run
-        model_type: "cnn" or "mlp"
+        channels: List of output channels for each conv block (e.g., [8] or [32, 64])
+        kernel_size: Kernel size for all conv layers
         use_batchnorm: Whether to use batch normalization
         dropout_rate: Dropout rate (0.0 = no dropout)
         use_augmentation: Whether to use data augmentation
@@ -102,14 +104,17 @@ def train_model(
     )
 
     # Create model
+    if channels is None:
+        channels = [32, 64]
     model = get_model(
-        model_type=model_type,
+        channels=channels,
+        kernel_size=kernel_size,
         use_batchnorm=use_batchnorm,
         dropout_rate=dropout_rate
     )
     model = model.to(device)
     num_params = count_parameters(model)
-    print(f"Model: {model_type.upper()}, Parameters: {num_params:,}")
+    print(f"Model: CNN {channels}, Parameters: {num_params:,}")
 
     # Loss and optimizer
     criterion = nn.CrossEntropyLoss()
@@ -119,7 +124,8 @@ def train_model(
     with mlflow.start_run(run_name=experiment_name):
         # Log parameters
         mlflow.log_param("experiment_name", experiment_name)
-        mlflow.log_param("model_type", model_type)
+        mlflow.log_param("channels", str(channels))
+        mlflow.log_param("kernel_size", kernel_size)
         mlflow.log_param("description", description)
         mlflow.log_param("learning_rate", learning_rate)
         mlflow.log_param("batch_size", batch_size)
@@ -197,7 +203,7 @@ def train_model(
         results = {
             "run_id": run_id,
             "experiment_name": experiment_name,
-            "model_type": model_type,
+            "channels": channels,
             "final_train_accuracy": final_train_acc,
             "final_val_accuracy": final_val_acc,
             "final_train_loss": final_train_loss,
@@ -208,6 +214,8 @@ def train_model(
                 "learning_rate": learning_rate,
                 "batch_size": batch_size,
                 "epochs": epochs,
+                "channels": channels,
+                "kernel_size": kernel_size,
                 "dropout_rate": dropout_rate,
                 "use_batchnorm": use_batchnorm,
                 "use_augmentation": use_augmentation

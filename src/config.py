@@ -21,8 +21,8 @@ DATA_DIR = "data"
 # Training defaults
 DEFAULT_BATCH_SIZE = 64
 DEFAULT_LEARNING_RATE = 0.001
-DEFAULT_EPOCHS = 5
-DEFAULT_SUBSET_SIZE = 2000  # Use smaller dataset for local training (0 for full dataset)
+DEFAULT_EPOCHS = 10
+DEFAULT_SUBSET_SIZE = 5000  # Use subset for local training (0 for full dataset)
 
 # Fashion MNIST classes
 FASHION_MNIST_CLASSES = [

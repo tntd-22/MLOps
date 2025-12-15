@@ -1,4 +1,4 @@
-"""Run all 5 experiments for MLOps project."""
+"""Run all 5 experiments for MLOps project - Progressive Optimization."""
 
 import mlflow
 from src.config import (
@@ -14,14 +14,14 @@ from src.train import train_model
 
 def run_all_experiments():
     """
-    Run all 5 experiments and track with MLflow.
+    Run all 5 experiments demonstrating progressive optimization.
 
-    Experiments:
-    1. Baseline CNN - No regularization
-    2. CNN + Regularization (Dropout + BatchNorm)
-    3. CNN + Data Augmentation
-    4. Hyperparameter Tuning
-    5. Simple MLP Comparison
+    Experiment Flow:
+    1. Tiny CNN (Underfit) - 1 conv layer, 8 filters → shows underfitting
+    2. Bigger CNN - 2 conv layers, 32→64 filters → fixes underfitting, shows overfitting
+    3. + BatchNorm - adds BatchNorm → reduces overfitting
+    4. + Dropout - adds Dropout → further reduces overfitting
+    5. + Augmentation - adds data augmentation → best generalization
     """
     # Setup MLflow with local SQLite backend
     mlflow_client = setup_mlflow()
@@ -32,22 +32,23 @@ def run_all_experiments():
     best_val_acc = 0.0
 
     # ============================================================
-    # Experiment 1: Baseline CNN
+    # Experiment 1: Tiny CNN (Underfitting Baseline)
     # ============================================================
     print("\n" + "="*60)
-    print("EXPERIMENT 1: Baseline CNN")
+    print("EXPERIMENT 1: Tiny CNN (Underfitting Baseline)")
     print("="*60)
 
     results1, _ = train_model(
-        experiment_name="exp1_baseline_cnn",
-        model_type="cnn",
+        experiment_name="exp1_tiny_cnn_underfit",
+        channels=[8],
+        kernel_size=3,
         use_batchnorm=False,
         dropout_rate=0.0,
         use_augmentation=False,
         learning_rate=DEFAULT_LEARNING_RATE,
         batch_size=DEFAULT_BATCH_SIZE,
         epochs=DEFAULT_EPOCHS,
-        description="Baseline CNN without regularization - observe overfitting",
+        description="Tiny CNN (1 layer, 8 filters) - demonstrates underfitting",
         save_model=True
     )
     all_results.append(results1)
@@ -56,22 +57,23 @@ def run_all_experiments():
         best_result = results1
 
     # ============================================================
-    # Experiment 2: CNN + Regularization
+    # Experiment 2: Bigger CNN (Fix Underfitting)
     # ============================================================
     print("\n" + "="*60)
-    print("EXPERIMENT 2: CNN + Regularization (Dropout + BatchNorm)")
+    print("EXPERIMENT 2: Bigger CNN (Fix Underfitting)")
     print("="*60)
 
     results2, _ = train_model(
-        experiment_name="exp2_cnn_regularization",
-        model_type="cnn",
-        use_batchnorm=True,
-        dropout_rate=0.5,
+        experiment_name="exp2_bigger_cnn",
+        channels=[32, 64],
+        kernel_size=3,
+        use_batchnorm=False,
+        dropout_rate=0.0,
         use_augmentation=False,
         learning_rate=DEFAULT_LEARNING_RATE,
         batch_size=DEFAULT_BATCH_SIZE,
         epochs=DEFAULT_EPOCHS,
-        description="CNN with BatchNorm and Dropout(0.5) - reduce overfitting",
+        description="Bigger CNN (2 layers, 32→64) - fixes underfitting, shows overfitting",
         save_model=True
     )
     all_results.append(results2)
@@ -80,22 +82,23 @@ def run_all_experiments():
         best_result = results2
 
     # ============================================================
-    # Experiment 3: CNN + Data Augmentation
+    # Experiment 3: + BatchNorm
     # ============================================================
     print("\n" + "="*60)
-    print("EXPERIMENT 3: CNN + Data Augmentation")
+    print("EXPERIMENT 3: + BatchNorm")
     print("="*60)
 
     results3, _ = train_model(
-        experiment_name="exp3_cnn_augmentation",
-        model_type="cnn",
+        experiment_name="exp3_batchnorm",
+        channels=[32, 64],
+        kernel_size=3,
         use_batchnorm=True,
-        dropout_rate=0.5,
-        use_augmentation=True,
+        dropout_rate=0.0,
+        use_augmentation=False,
         learning_rate=DEFAULT_LEARNING_RATE,
         batch_size=DEFAULT_BATCH_SIZE,
         epochs=DEFAULT_EPOCHS,
-        description="CNN with regularization and data augmentation - best generalization",
+        description="Add BatchNorm - reduces overfitting",
         save_model=True
     )
     all_results.append(results3)
@@ -104,23 +107,23 @@ def run_all_experiments():
         best_result = results3
 
     # ============================================================
-    # Experiment 4: Hyperparameter Tuning
+    # Experiment 4: + Dropout
     # ============================================================
     print("\n" + "="*60)
-    print("EXPERIMENT 4: Hyperparameter Tuning")
+    print("EXPERIMENT 4: + Dropout")
     print("="*60)
 
-    # Try different learning rate
     results4, _ = train_model(
-        experiment_name="exp4_hyperparameter_tuning",
-        model_type="cnn",
+        experiment_name="exp4_dropout",
+        channels=[32, 64],
+        kernel_size=3,
         use_batchnorm=True,
-        dropout_rate=0.3,
-        use_augmentation=True,
-        learning_rate=0.0005,
+        dropout_rate=0.5,
+        use_augmentation=False,
+        learning_rate=DEFAULT_LEARNING_RATE,
         batch_size=DEFAULT_BATCH_SIZE,
         epochs=DEFAULT_EPOCHS,
-        description="Hyperparameter tuning - lower dropout and learning rate",
+        description="Add Dropout(0.5) - further reduces overfitting",
         save_model=True
     )
     all_results.append(results4)
@@ -129,44 +132,48 @@ def run_all_experiments():
         best_result = results4
 
     # ============================================================
-    # Experiment 5: Simple MLP (Underfitting Demo)
+    # Experiment 5: + Data Augmentation
     # ============================================================
     print("\n" + "="*60)
-    print("EXPERIMENT 5: Simple MLP (Underfitting Comparison)")
+    print("EXPERIMENT 5: + Data Augmentation")
     print("="*60)
 
     results5, _ = train_model(
-        experiment_name="exp5_mlp_comparison",
-        model_type="mlp",
-        use_batchnorm=False,
-        dropout_rate=0.0,
-        use_augmentation=False,
+        experiment_name="exp5_augmentation",
+        channels=[32, 64],
+        kernel_size=3,
+        use_batchnorm=True,
+        dropout_rate=0.5,
+        use_augmentation=True,
         learning_rate=DEFAULT_LEARNING_RATE,
         batch_size=DEFAULT_BATCH_SIZE,
         epochs=DEFAULT_EPOCHS,
-        description="Simple MLP - demonstrates underfitting on image data",
-        save_model=False  # Don't save MLP as best model
+        description="Add Augmentation - best generalization",
+        save_model=True
     )
     all_results.append(results5)
-    # Note: We don't update best_result for MLP since it's just for comparison
+    if results5["best_val_accuracy"] > best_val_acc:
+        best_val_acc = results5["best_val_accuracy"]
+        best_result = results5
 
     # ============================================================
     # Summary
     # ============================================================
     print("\n" + "="*60)
-    print("EXPERIMENTS SUMMARY")
+    print("EXPERIMENTS SUMMARY - Progressive Optimization")
     print("="*60)
-    print(f"{'Experiment':<35} {'Train Acc':<12} {'Val Acc':<12} {'Gap':<10}")
-    print("-"*60)
+    print(f"{'Experiment':<30} {'Channels':<12} {'Train Acc':<10} {'Val Acc':<10} {'Gap':<8}")
+    print("-"*70)
 
     for result in all_results:
         name = result["experiment_name"]
+        channels = str(result["channels"])
         train_acc = result["final_train_accuracy"]
         val_acc = result["final_val_accuracy"]
         gap = result["overfit_gap"]
-        print(f"{name:<35} {train_acc:.4f}       {val_acc:.4f}       {gap:.4f}")
+        print(f"{name:<30} {channels:<12} {train_acc:.4f}     {val_acc:.4f}     {gap:+.4f}")
 
-    print("-"*60)
+    print("-"*70)
     print(f"\nBest Model: {best_result['experiment_name']}")
     print(f"Best Validation Accuracy: {best_val_acc:.4f}")
     print(f"Run ID: {best_result['run_id']}")
