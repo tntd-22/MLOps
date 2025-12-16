@@ -1,0 +1,13 @@
+# Lightweight inference dependencies (NO PyTorch!)
+# Used in Docker for ~500MB image instead of ~4GB
+
+# ONNX Runtime (CPU only, ~50MB vs PyTorch's ~3GB)
+onnxruntime>=1.16.0
+
+# Web
+flask>=3.0.0
+gunicorn>=21.0.0
+pillow>=10.0.0
+
+# Utilities
+numpy>=1.24.0

@@ -1,0 +1,27 @@
+{
+  "model_name": "fashion-mnist-cnn",
+  "version": 5,
+  "alias": "champion",
+  "run_id": "251439cf5a294090b8a6fadc18683920",
+  "experiment_name": "exp3_batchnorm",
+  "best_val_accuracy": 0.881,
+  "classes": [
+    "T-shirt/top",
+    "Trouser",
+    "Pullover",
+    "Dress",
+    "Coat",
+    "Sandal",
+    "Shirt",
+    "Sneaker",
+    "Bag",
+    "Ankle boot"
+  ],
+  "input_shape": [
+    1,
+    1,
+    28,
+    28
+  ],
+  "onnx_file": "model.onnx"
+}

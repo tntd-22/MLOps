@@ -7,6 +7,9 @@ scikit-learn>=1.3.0
 # MLflow
 mlflow>=2.8.0
 
+# ONNX (for model export)
+onnx>=1.15.0
+
 # Web
 flask>=3.0.0
 gunicorn>=21.0.0
