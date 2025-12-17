@@ -29,7 +29,7 @@ def run_all_experiments():
 
     all_results = []
     best_result = None
-    best_val_acc = 0.0
+    smallest_gap = float('inf')
 
     # ============================================================
     # Experiment 1: Tiny CNN (Underfitting Baseline)
@@ -52,8 +52,8 @@ def run_all_experiments():
         save_model=True
     )
     all_results.append(results1)
-    if results1["best_val_accuracy"] > best_val_acc:
-        best_val_acc = results1["best_val_accuracy"]
+    if abs(results1["overfit_gap"]) < smallest_gap:
+        smallest_gap = abs(results1["overfit_gap"])
         best_result = results1
 
     # ============================================================
@@ -77,8 +77,8 @@ def run_all_experiments():
         save_model=True
     )
     all_results.append(results2)
-    if results2["best_val_accuracy"] > best_val_acc:
-        best_val_acc = results2["best_val_accuracy"]
+    if abs(results2["overfit_gap"]) < smallest_gap:
+        smallest_gap = abs(results2["overfit_gap"])
         best_result = results2
 
     # ============================================================
@@ -102,8 +102,8 @@ def run_all_experiments():
         save_model=True
     )
     all_results.append(results3)
-    if results3["best_val_accuracy"] > best_val_acc:
-        best_val_acc = results3["best_val_accuracy"]
+    if abs(results3["overfit_gap"]) < smallest_gap:
+        smallest_gap = abs(results3["overfit_gap"])
         best_result = results3
 
     # ============================================================
@@ -127,8 +127,8 @@ def run_all_experiments():
         save_model=True
     )
     all_results.append(results4)
-    if results4["best_val_accuracy"] > best_val_acc:
-        best_val_acc = results4["best_val_accuracy"]
+    if abs(results4["overfit_gap"]) < smallest_gap:
+        smallest_gap = abs(results4["overfit_gap"])
         best_result = results4
 
     # ============================================================
@@ -152,8 +152,8 @@ def run_all_experiments():
         save_model=True
     )
     all_results.append(results5)
-    if results5["best_val_accuracy"] > best_val_acc:
-        best_val_acc = results5["best_val_accuracy"]
+    if abs(results5["overfit_gap"]) < smallest_gap:
+        smallest_gap = abs(results5["overfit_gap"])
         best_result = results5
 
     # ============================================================
@@ -175,7 +175,8 @@ def run_all_experiments():
 
     print("-"*70)
     print(f"\nBest Model: {best_result['experiment_name']}")
-    print(f"Best Validation Accuracy: {best_val_acc:.4f}")
+    print(f"Smallest Train-Val Gap: {best_result['overfit_gap']:+.4f}")
+    print(f"Validation Accuracy: {best_result['best_val_accuracy']:.4f}")
     print(f"Run ID: {best_result['run_id']}")
 
     # Register and promote best model to Production

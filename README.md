@@ -5,8 +5,10 @@ End-to-end MLOps pipeline with PyTorch, MLflow (local with Model Registry), Flas
 ## Architecture
 
 ```
-Local Training → MLflow Tracking (SQLite) → Model Registry (Production) → Docker Build → Inference
+Local Training → MLflow Tracking (SQLite) → Model Registry → ONNX Export → Docker Build → Inference
 ```
+
+**Docker image size: ~540 MB** (using ONNX Runtime instead of PyTorch for inference)
 
 ## Quick Start
 
@@ -37,9 +39,20 @@ This will:
 - Train 5 different model configurations
 - Log all experiments to MLflow (SQLite)
 - Automatically register the best model to Model Registry
-- Promote it to "Production" stage
+- Promote it to "champion" alias
 
-### 3. View MLflow UI
+### 3. Export Model to ONNX
+
+```bash
+# Export the champion model for lightweight Docker inference
+python export_onnx.py
+```
+
+This creates:
+- `model.onnx` - Lightweight ONNX model (~1.6 MB)
+- `model_metadata.json` - Model metadata for inference
+
+### 4. View MLflow UI
 
 ```bash
 mlflow ui --backend-store-uri sqlite:///mlflow.db
@@ -48,27 +61,32 @@ mlflow ui --backend-store-uri sqlite:///mlflow.db
 
 Browse experiments in the "Experiments" tab and model versions in the "Models" tab.
 
-### 4. Run Flask App
+### 5. Run Flask App
 
+**Local development (with PyTorch):**
 ```bash
 python app.py
-# Open http://localhost:5000
+# Open http://localhost:5001
 ```
 
-The app automatically loads the Production model from the Model Registry.
+**Local with ONNX (lightweight):**
+```bash
+python app_onnx.py
+# Open http://localhost:5001
+```
 
-### 5. Docker
+### 6. Docker
 
 ```bash
-# Build (includes MLflow artifacts with Production model)
+# Build lightweight image (~540 MB with ONNX)
 docker build -t mlops:latest .
 
 # Run
-docker run -p 5000:5000 mlops:latest
+docker run -p 5001:5001 mlops:latest
 
 # Or pull from Docker Hub
 docker pull dungtnt/mlops:latest
-docker run -p 5000:5000 dungtnt/mlops:latest
+docker run -p 5001:5001 dungtnt/mlops:latest
 ```
 
 ## Experiments
@@ -83,25 +101,23 @@ docker run -p 5000:5000 dungtnt/mlops:latest
 
 ## Model Registry
 
-Models are versioned and staged in MLflow Model Registry:
+Models are versioned in MLflow Model Registry using aliases:
 
-| Stage | Description |
+| Alias | Description |
 |-------|-------------|
-| None | Newly registered models |
-| Production | Best performing model (auto-promoted) |
-| Archived | Previous production models |
+| champion | Best performing model (auto-promoted) |
 
 ```python
-# Load Production model programmatically
+# Load champion model programmatically
 import mlflow.pytorch
-model = mlflow.pytorch.load_model("models:/fashion-mnist-cnn/Production")
+model = mlflow.pytorch.load_model("models:/fashion-mnist-cnn@champion")
 ```
 
 ## Project Structure
 
 ```
 MLOps/
-├── .github/workflows/ci-cd.yml  # GitHub Actions
+├── .github/workflows/ci-cd.yml   # GitHub Actions
 ├── src/                          # Source code
 │   ├── config.py                 # MLflow & Model Registry config
 │   ├── data.py                   # Data loading & augmentation
@@ -110,9 +126,14 @@ MLOps/
 │   └── experiments.py            # Run experiments & promote model
 ├── templates/                    # Flask templates
 ├── static/                       # CSS styles
-├── app.py                        # Flask application
-├── Dockerfile                    # Docker configuration (Python 3.12)
-├── requirements.txt              # Python dependencies
+├── app.py                        # Flask application (PyTorch)
+├── app_onnx.py                   # Flask application (ONNX Runtime)
+├── export_onnx.py                # Export champion model to ONNX
+├── Dockerfile                    # Docker configuration (ONNX)
+├── requirements.txt              # Full dependencies (training)
+├── requirements-inference.txt    # Lightweight dependencies (Docker)
+├── model.onnx                    # Exported ONNX model
+├── model_metadata.json           # Model metadata for inference
 ├── mlflow.db                     # MLflow SQLite database
 └── mlruns/                       # MLflow artifacts (models)
 ```
@@ -120,8 +141,10 @@ MLOps/
 ## CI/CD
 
 Push to `main` branch triggers:
-1. Build Docker image (includes MLflow artifacts)
+1. Build lightweight Docker image (~540 MB with ONNX)
 2. Push to Docker Hub
+
+**Note:** `model.onnx` and `model_metadata.json` must be committed to the repo for CI/CD to work.
 
 Required GitHub Secrets:
 - `DOCKER_USERNAME`
